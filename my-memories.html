@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>我的记忆 - 记忆交换计划</title>
+  <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.15.0/dist/av-min.js"></script>
+<style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 40px;
+      padding-top: 20px;
+    }
+    
+    .header h1 {
+      font-size: 36px;
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+    
+    .header p {
+      font-size: 16px;
+      opacity: 0.9;
+      letter-spacing: 0.5px;
+    }
+    
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    
+    .fishing-area {
+      background: rgba(255,255,255,0.95);
+      border-radius: 20px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      margin-bottom: 30px;
+    }
+    
+    .fishing-icon {
+      font-size: 80px;
+      margin-bottom: 20px;
+      animation: fishing 2s ease-in-out infinite;
+    }
+    
+    @keyframes fishing {
+      0%, 100% {
+        transform: rotate(-10deg);
+      }
+      50% {
+        transform: rotate(10deg);
+      }
+    }
+    
+    .fishing-text {
+      font-size: 20px;
+      color: #333;
+      margin-bottom: 30px;
+      letter-spacing: 0.5px;
+    }
+    
+    .fishing-btn {
+      padding: 18px 50px;
+      font-size: 20px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+      letter-spacing: 1px;
+    }
+    
+    .fishing-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+    }
+    
+    .fishing-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .fishing-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .memory-card {
+      background: white;
+      border-radius: 20px;
+      padding: 0;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      display: none;
+      animation: cardAppear 0.5s ease-out;
+      overflow: hidden;
+    }
+    
+    .memory-card.show {
+      display: block;
+    }
+    
+    @keyframes cardAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.8) translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+    
+    .memory-photo {
+      width: 100%;
+      height: 300px;
+      overflow: hidden;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      position: relative;
+    }
+    
+    .memory-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    
+    .memory-photo.no-photo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 60px;
+    }
+    
+    .memory-body {
+      padding: 35px 35px 30px;
+    }
+    
+    .memory-content {
+      font-size: 17px;
+      line-height: 2;
+      color: #333;
+      margin-bottom: 30px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      letter-spacing: 0.5px;
+      text-align: justify;
+    }
+    
+    .memory-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 25px;
+    }
+    
+    .tag {
+      padding: 8px 18px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 20px;
+      font-size: 13px;
+      letter-spacing: 0.5px;
+    }
+    
+    .memory-signature {
+      text-align: right;
+      color: #999;
+      font-size: 14px;
+      padding-top: 25px;
+      border-top: 1px solid #eee;
+      margin-bottom: 25px;
+      line-height: 1.8;
+      letter-spacing: 0.5px;
+    }
+    
+    .memory-footer {
+      text-align: center;
+      padding: 20px 30px;
+      background: #f8f9fa;
+      font-size: 13px;
+      color: #999;
+      letter-spacing: 0.5px;
+      line-height: 1.6;
+    }
+    
+    .memory-footer a {
+      color: #667eea;
+      text-decoration: none;
+    }
+    
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .btn {
+      padding: 16px;
+      border: none;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: 0.5px;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+    }
+    
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .btn:active {
+      transform: scale(0.98);
+    }
+    
+    .btn-next {
+      width: 100%;
+      padding: 18px;
+      border: none;
+      border-radius: 12px;
+      font-size: 17px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      letter-spacing: 1px;
+    }
+    
+    .btn-next:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-next:active {
+      transform: scale(0.98);
+    }
+    
+    .back-btn {
+      display: inline-block;
+      color: white;
+      text-decoration: none;
+      padding: 12px 30px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50px;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+    
+    .back-btn:hover {
+      background: rgba(255,255,255,0.3);
+      transform: translateX(-5px);
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      line-height: 1.8;
+    }
+    
+    /* 分享弹窗 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+    
+    .modal.show {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 400px;
+      width: 100%;
+      animation: modalAppear 0.3s ease-out;
+    }
+    
+    @keyframes modalAppear {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    .modal-header {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+      letter-spacing: 0.5px;
+    }
+    
+    .share-options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    
+    .share-btn {
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 12px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      letter-spacing: 0.5px;
+    }
+    
+    .share-btn:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+    
+    .share-icon {
+      font-size: 24px;
+    }
+    
+    .modal-close {
+      margin-top: 20px;
+      width: 100%;
+      padding: 14px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      font-size: 15px;
+      letter-spacing: 0.5px;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+      }
+      
+      .header h1 {
+        font-size: 28px;
+      }
+      
+      .fishing-area {
+        padding: 30px 20px;
+      }
+      
+      .fishing-icon {
+        font-size: 60px;
+      }
+      
+      .memory-body {
+        padding: 25px 20px 20px;
+      }
+      
+      .memory-content {
+        font-size: 16px;
+        line-height: 1.9;
+        margin-bottom: 25px;
+      }
+      
+      .memory-photo {
+        height: 250px;
+      }
+      
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+      
+      .memory-signature {
+        font-size: 13px;
+        padding-top: 20px;
+        margin-bottom: 20px;
+      }
+      
+      .memory-footer {
+        padding: 18px 20px;
+        font-size: 12px;
+      }
+    }
+  </style>
+
+</head>
+<body>
+  <div class="container">
+    <a href="index.html" class="back-btn">← 返回首页</a>
+    
+    <div class="header">
+      <h1>📚 我的记忆</h1>
+      <p>查看你投递的所有记忆</p>
+    </div>
+    
+    <div class="search-box">
+      <input type="text" class="search-input" id="searchInput" placeholder="🔍 搜索记忆内容...">
+    </div>
+    
+    <div class="memories-grid" id="memoriesGrid"></div>
+    
+    <div class="empty-state" id="emptyState" style="display: none;">
+      <div class="empty-icon">📭</div>
+      <div class="empty-text">还没有投递过记忆</div>
+      <a href="submit.html" class="btn">去投递第一个记忆</a>
+    </div>
+  </div>
+
+  <script>
+    // 初始化LeanCloud
+    AV.init({
+      appId: "AjDlSqRRtPZxgvP7oKE51Ed3-MdYXbMMI",
+      appKey: "AmW2gLklfoggtMLACiWLkYZr",
+      serverURL: "https://files.gdufs60memory.site"
+    });
+    
+    let allMemories = [];
+    
+    // 加载记忆列表
+    async function loadMemories() {
+      try {
+        // 注意：这里需要实现用户识别机制
+        // 可以使用localStorage存储用户ID，或者使用LeanCloud的用户系统
+        
+        const Memory = AV.Object.extend('Memory');
+        const query = new AV.Query(Memory);
+        query.descending('createdAt');
+        query.limit(100);
+        
+        const memories = await query.find();
+        allMemories = memories;
+        
+        if (memories.length === 0) {
+          document.getElementById('emptyState').style.display = 'block';
+          return;
+        }
+        
+        displayMemories(memories);
+        
+      } catch (error) {
+        console.error('加载失败:', error);
+        alert('加载记忆失败：' + error.message);
+      }
+    }
+    
+    // 显示记忆列表
+    function displayMemories(memories) {
+      const grid = document.getElementById('memoriesGrid');
+      grid.innerHTML = '';
+      
+      memories.forEach(memory => {
+        const item = createMemoryItem(memory);
+        grid.appendChild(item);
+      });
+    }
+    
+    // 创建记忆项
+    function createMemoryItem(memory) {
+      const div = document.createElement('div');
+      div.className = 'memory-item';
+      
+      const photo = memory.get('photo');
+      const content = memory.get('content');
+      const isMatched = memory.get('isMatched');
+      const matchCount = memory.get('matchCount') || 0;
+      const createdAt = memory.createdAt;
+      
+      const thumbHTML = photo 
+        ? `<img src="${photo}" alt="">`
+        : '📸';
+      
+      const statusHTML = isMatched
+        ? `<span class="memory-status status-matched">已被捞取 ${matchCount}次</span>`
+        : `<span class="memory-status status-waiting">等待被捞取</span>`;
+      
+      div.innerHTML = `
+        <div class="memory-thumb">${thumbHTML}</div>
+        <div class="memory-info">
+          <div class="memory-text">${content}</div>
+          <div class="memory-meta">
+            <span>${formatDate(createdAt)}</span>
+            ${statusHTML}
+          </div>
+        </div>
+      `;
+      
+      div.addEventListener('click', () => {
+        window.location.href = `card.html?id=${memory.id}`;
+      });
+      
+      return div;
+    }
+    
+    // 格式化日期
+    function formatDate(date) {
+      const now = new Date();
+      const diff = now - date;
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      
+      if (days === 0) return '今天';
+      if (days === 1) return '昨天';
+      if (days < 7) return `${days}天前`;
+      if (days < 30) return `${Math.floor(days / 7)}周前`;
+      if (days < 365) return `${Math.floor(days / 30)}个月前`;
+      return `${Math.floor(days / 365)}年前`;
+    }
+    
+    // 搜索功能
+    document.getElementById('searchInput').addEventListener('input', function(e) {
+      const keyword = e.target.value.toLowerCase();
+      
+      if (!keyword) {
+        displayMemories(allMemories);
+        return;
+      }
+      
+      const filtered = allMemories.filter(memory => {
+        const content = memory.get('content').toLowerCase();
+        const tags = memory.get('tags') || [];
+        return content.includes(keyword) || tags.some(tag => tag.includes(keyword));
+      });
+      
+      displayMemories(filtered);
+    });
+    
+    // 加载记忆
+    loadMemories();
+  </script>
+</body>
+</html>
