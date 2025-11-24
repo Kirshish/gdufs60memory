@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分享你的记忆 - 记忆交换计划</title>
+  <script src="https://cdn.jsdelivr.net/npm/leancloud-storage@3.15.0/dist/av-min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: slideUp 0.5s ease-out;
+      margin: 20px auto;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    
+    .header h1 {
+      color: #667eea;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    
+    .header p {
+      color: #666;
+      font-size: 16px;
+    }
+    
+    .form-group {
+      margin-bottom: 30px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 10px;
+      color: #333;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .required {
+      color: #e74c3c;
+      margin-left: 3px;
+    }
+    
+    .optional {
+      color: #999;
+      font-weight: 400;
+      font-size: 14px;
+      margin-left: 5px;
+    }
+    
+    input[type="text"],
+    textarea,
+    select {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 16px;
+      transition: all 0.3s;
+      font-family: inherit;
+    }
+    
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+    
+    .char-count {
+      text-align: right;
+      font-size: 14px;
+      color: #999;
+      margin-top: 5px;
+    }
+    
+    .char-count.warning {
+      color: #e74c3c;
+    }
+    
+    .radio-group,
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-top: 10px;
+    }
+    
+    .radio-item,
+    .checkbox-item {
+      flex: 0 0 calc(50% - 7.5px);
+      display: flex;
+      align-items: center;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .radio-item:hover,
+    .checkbox-item:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+    
+    .radio-item input,
+    .checkbox-item input {
+      margin-right: 8px;
+      cursor: pointer;
+    }
+    
+    .radio-item.selected,
+    .checkbox-item.selected {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+    
+    /* 图片上传样式 */
+    .upload-area {
+      border: 2px dashed #e0e0e0;
+      border-radius: 10px;
+      padding: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: #fafafa;
+    }
+    
+    .upload-area:hover {
+      border-color: #667eea;
+      background: #f8f9ff;
+    }
+    
+    .upload-area.dragover {
+      border-color: #667eea;
+      background: #f0f3ff;
+    }
+    
+    .upload-icon {
+      font-size: 48px;
+      margin-bottom: 10px;
+    }
+    
+    .upload-text {
+      color: #666;
+      font-size: 16px;
+      margin-bottom: 5px;
+    }
+    
+    .upload-hint {
+      color: #999;
+      font-size: 14px;
+    }
+    
+    #photoInput {
+      display: none;
+    }
+    
+    .preview-container {
+      margin-top: 20px;
+      display: none;
+    }
+    
+    .preview-container.show {
+      display: block;
+    }
+    
+    .preview-image {
+      width: 100%;
+      max-height: 300px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+    
+    .preview-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .btn-secondary {
+      flex: 1;
+      padding: 10px;
+      background: #f0f0f0;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    
+    .btn-secondary:hover {
+      background: #e0e0e0;
+    }
+    
+    .upload-progress {
+      margin-top: 15px;
+      display: none;
+    }
+    
+    .upload-progress.show {
+      display: block;
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      width: 0%;
+      transition: width 0.3s;
+    }
+    
+    .progress-text {
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+    }
+    
+    .hint {
+      font-size: 14px;
+      color: #666;
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    .submit-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 18px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 10px;
+    }
+    
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    .submit-btn:active {
+      transform: translateY(0);
+    }
+    
+    .submit-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .error-message {
+      background: #fee;
+      color: #c33;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .error-message.show {
+      display: block;
+      animation: shake 0.5s;
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        padding: 25px;
+      }
+      
+      .header h1 {
+        font-size: 26px;
+      }
+      
+      .radio-item,
+      .checkbox-item {
+        flex: 0 0 100%;
+      }
+    }
+        /* ========== 移动端优化 ========== */
+
+    /* 防止点击高亮 */
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* 确保页面可以滚动 */
+    html, body {
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    body {
+      align-items: flex-start;
+      padding-top: 20px;
+    }
+
+    /* 移动端响应式 */
+    @media (max-width: 600px) {
+      body {
+        padding: 15px;
+        padding-top: 20px;
+        padding-bottom: 30px;
+      }
+      
+      .container {
+        padding: 25px 20px;
+        margin: 0 auto;
+      }
+      
+      h1 {
+        font-size: 24px;
+      }
+      
+      .subtitle {
+        font-size: 13px;
+      }
+      
+      input, textarea, select {
+        font-size: 16px !important; /* 防止 iOS 自动缩放 */
+        padding: 12px;
+      }
+      
+      textarea {
+        min-height: 100px;
+      }
+      
+      button {
+        padding: 14px;
+        font-size: 17px;
+      }
+      
+      .form-group {
+        margin-bottom: 18px;
+      }
+    }
+
+    /* 键盘弹出时的优化 */
+    @media (max-height: 600px) {
+      body {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+      
+      .container {
+        margin-top: 0;
+      }
+      
+      h1 {
+        font-size: 22px;
+        margin-bottom: 8px;
+      }
+      
+      .subtitle {
+        margin-bottom: 15px;
+      }
+      
+      .form-group {
+        margin-bottom: 12px;
+      }
+    }
+
+    /* 按钮触感反馈 */
+    button:active {
+      transform: scale(0.98);
+      opacity: 0.9;
+    }
+
+    /* 防止双击缩放 */
+    input, textarea, button, select {
+      touch-action: manipulation;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📮 分享你的记忆</h1>
+      <p>让时光在这里交汇</p>
+    </div>
+    
+    <div class="error-message" id="errorMessage"></div>
+    
+    <form id="memoryForm">
+      <!-- 身份 -->
+      <div class="form-group">
+        <label>你的身份 <span class="required">*</span></label>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="identity" value="在校生" required>
+            <span>🎓 在校生</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="identity" value="校友">
+            <span>🎖️ 校友</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- 届别/年级 -->
+      <div class="form-group">
+        <label>年级/届别 <span class="required">*</span></label>
+        <select name="grade" id="gradeSelect" required>
+          <option value="">请先选择身份</option>
+        </select>
+      </div>
+      
+      <!-- 记忆内容 -->
+      <div class="form-group">
+        <label>你想分享的记忆 <span class="required">*</span></label>
+        <textarea name="content" id="contentInput" required placeholder="可以是一段难忘的经历、一句想说的话、一个小故事...&#10;&#10;例如：&#10;• 图书馆三楼靠窗的位置，陪我度过了无数个备考的夜晚&#10;• 食堂阿姨的一句“多吃点” ，是最温暖的关怀&#10;• 毕业那天，我们在操场上哭成了泪人"></textarea>
+        <div class="char-count" id="charCount">0/200</div>
+      </div>
+      
+      <!-- 记忆标签 -->
+      <div class="form-group">
+        <label>记忆标签 <span class="required">*</span> <span style="font-size: 14px; color: #999;">(可多选)</span></label>
+        <div class="checkbox-group">
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="课堂时光">
+            <span>📚 课堂时光</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="社团活动">
+            <span>🎭 社团活动</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="图书馆">
+            <span>📖 图书馆</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="食堂美食">
+            <span>🍜 食堂美食</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="宿舍趣事">
+            <span>🏠 宿舍趣事</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="恋爱回忆">
+            <span>💕 恋爱回忆</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="考试周">
+            <span>📝 考试周</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="毕业季">
+            <span>🎓 毕业季</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="职业发展">
+            <span>💼 职业发展</span>
+          </label>
+          <label class="checkbox-item">
+            <input type="checkbox" name="tags" value="其他">
+            <span>✨ 其他</span>
+          </label>
+        </div>
+      </div>
+      
+      <!-- 照片上传 -->
+      <div class="form-group">
+        <label>有照片吗？<span class="optional">(可选)</span></label>
+        <div class="hint" style="margin-bottom: 15px;">
+          上传一张最能代表这段记忆的照片 可以是风景、合影、截图... 任何你想分享的（会出现在你的专属卡片上）
+        </div>
+        
+        <div class="upload-area" id="uploadArea">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">点击或拖拽上传照片</div>
+          <div class="upload-hint">支持 JPG、PNG、GIF，最大 5MB</div>
+        </div>
+        
+        <input type="file" id="photoInput" accept="image/*">
+        
+        <div class="upload-progress" id="uploadProgress">
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
+          <div class="progress-text" id="progressText">上传中...</div>
+        </div>
+        
+        <div class="preview-container" id="previewContainer">
+          <img id="previewImage" class="preview-image" src="" alt="预览">
+          <div class="preview-actions">
+            <button type="button" class="btn-secondary" id="reuploadBtn">重新上传</button>
+            <button type="button" class="btn-secondary" id="deleteBtn">删除照片</button>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 署名方式 -->
+      <div class="form-group">
+        <label>署名方式 <span class="required">*</span></label>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="signatureType" value="匿名" required>
+            <span>🎭 匿名</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="signatureType" value="显示年级">
+            <span>📅 显示年级</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="signatureType" value="显示昵称">
+            <span>✨ 显示昵称</span>
+          </label>
+        </div>
+        <div class="hint">
+          • 匿名：不显示任何信息<br>
+          • 显示年级：如"2023级的TA"<br>
+          • 显示昵称：显示你填写的昵称
+        </div>
+      </div>
+      
+      <!-- 昵称 -->
+      <div class="form-group hidden" id="nicknameGroup">
+        <label>昵称</label>
+        <input type="text" name="nickname" id="nicknameInput" placeholder="2-8个字" maxlength="8">
+      </div>
+      
+      <button type="submit" class="submit-btn" id="submitBtn">🚀 投递记忆</button>
+    </form>
+  </div>
+
+  <script>
+    // 初始化LeanCloud
+    AV.init({
+      appId: "AjDlSqRRtPZxgvP7oKE51Ed3-MdYXbMMI",
+      appKey: "AmW2gLklfoggtMLACiWLkYZr",
+      serverURL: "https://memory-proxy.zhangjiayi1219.workers.dev/"
+    });
+    
+    // 全局变量
+    let uploadedPhotoFile = null;  // 存储上传的LeanCloud文件对象
+    
+    // 在校生选项
+    const studentGrades = [
+      '2025级（大一/研一）',
+      '2024级（大二/研二）',
+      '2023级（大三/研三）',
+      '2022级（大四/研四）',
+      '2021级（大五/博士）',
+      '2020级及之前'
+    ];
+    
+    // 校友选项
+    const alumniGrades = [
+      '2025届（今年刚离校）',
+      '2024届（毕业1年）',
+      '2023届（毕业2年）',
+      '2022届（毕业3年）',
+      '2021届（毕业4年）',
+      '2016-2020届（毕业5-9年）',
+      '2011-2015届（毕业10-14年）',
+      '2006-2010届（毕业15-19年）',
+      '2001-2005届（毕业20-24年）',
+      '1996-2000届（毕业25-29年）',
+      '1991-1995届（毕业30-34年）',
+      '1965-1990届（毕业35年以上）'
+    ];
+    
+    // 监听身份选择
+    document.querySelectorAll('input[name="identity"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const gradeSelect = document.getElementById('gradeSelect');
+        gradeSelect.innerHTML = '<option value="">请选择</option>';
+        
+        const grades = this.value === '在校生' ? studentGrades : alumniGrades;
+        grades.forEach(grade => {
+          const option = document.createElement('option');
+          option.value = grade;
+          option.textContent = grade;
+          gradeSelect.appendChild(option);
+        });
+        
+        // 添加选中样式
+        document.querySelectorAll('.radio-item').forEach(item => {
+          item.classList.remove('selected');
+        });
+        this.closest('.radio-item').classList.add('selected');
+      });
+    });
+    
+    // 监听标签选择
+    document.querySelectorAll('input[name="tags"]').forEach(checkbox => {
+      checkbox.addEventListener('change', function() {
+        if (this.checked) {
+          this.closest('.checkbox-item').classList.add('selected');
+        } else {
+          this.closest('.checkbox-item').classList.remove('selected');
+        }
+      });
+    });
+    
+    // 监听署名方式选择
+    document.querySelectorAll('input[name="signatureType"]').forEach(radio => {
+      radio.addEventListener('change', function() {
+        const nicknameGroup = document.getElementById('nicknameGroup');
+        if (this.value === '显示昵称') {
+          nicknameGroup.classList.remove('hidden');
+        } else {
+          nicknameGroup.classList.add('hidden');
+        }
+        
+        // 添加选中样式
+        document.querySelectorAll('input[name="signatureType"]').forEach(r => {
+          r.closest('.radio-item').classList.remove('selected');
+        });
+        this.closest('.radio-item').classList.add('selected');
+      });
+    });
+    
+    // 字数统计
+    const contentInput = document.getElementById('contentInput');
+    const charCount = document.getElementById('charCount');
+    
+    contentInput.addEventListener('input', function() {
+      const length = this.value.length;
+      charCount.textContent = `${length}/200`;
+      
+      if (length > 200) {
+        charCount.classList.add('warning');
+      } else {
+        charCount.classList.remove('warning');
+      }
+    });
+    
+    // ========== 图片上传功能 ==========
+    
+    const uploadArea = document.getElementById('uploadArea');
+    const photoInput = document.getElementById('photoInput');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+    const uploadProgress = document.getElementById('uploadProgress');
+    const progressFill = document.getElementById('progressFill');
+    const progressText = document.getElementById('progressText');
+    const reuploadBtn = document.getElementById('reuploadBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+    
+    // 点击上传区域
+    uploadArea.addEventListener('click', () => {
+      photoInput.click();
+    });
+    
+    // 选择文件
+    photoInput.addEventListener('change', handleFileSelect);
+    
+    // 拖拽上传
+    uploadArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadArea.classList.add('dragover');
+    });
+    
+    uploadArea.addEventListener('dragleave', () => {
+      uploadArea.classList.remove('dragover');
+    });
+    
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('dragover');
+      
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+    
+    // 处理文件选择
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) {
+        handleFile(file);
+      }
+    }
+    
+    // 处理文件
+    async function handleFile(file) {
+      // 验证文件类型
+      if (!file.type.startsWith('image/')) {
+        showError('请上传图片文件');
+        return;
+      }
+      
+      // 验证文件大小（5MB）
+      if (file.size > 5 * 1024 * 1024) {
+        showError('图片大小不能超过 5MB');
+        return;
+      }
+      
+      // 显示进度条
+      uploadProgress.classList.add('show');
+      uploadArea.style.display = 'none';
+      
+      try {
+        // 上传到LeanCloud
+        const avFile = new AV.File(file.name, file);
+        
+        // 监听上传进度
+        await avFile.save({
+          onprogress: (progress) => {
+            const percent = (progress.percent * 100).toFixed(0);
+            progressFill.style.width = percent + '%';
+            progressText.textContent = `上传中... ${percent}%`;
+          }
+        });
+        
+        // 上传成功
+        uploadedPhotoFile = avFile;
+        
+        // 显示预览
+        previewImage.src = avFile.url();
+        uploadProgress.classList.remove('show');
+        previewContainer.classList.add('show');
+        
+        console.log('图片上传成功:', avFile.url());
+        
+      } catch (error) {
+        console.error('上传失败:', error);
+        showError('图片上传失败：' + error.message);
+        
+        // 重置UI
+        uploadProgress.classList.remove('show');
+        uploadArea.style.display = 'block';
+      }
+    }
+    
+    // 重新上传
+    reuploadBtn.addEventListener('click', () => {
+      previewContainer.classList.remove('show');
+      uploadArea.style.display = 'block';
+      photoInput.value = '';
+      uploadedPhotoFile = null;
+    });
+    
+    // 删除照片
+    deleteBtn.addEventListener('click', () => {
+      previewContainer.classList.remove('show');
+      uploadArea.style.display = 'block';
+      photoInput.value = '';
+      uploadedPhotoFile = null;
+    });
+    
+    // ========== 表单提交 ==========
+    
+    document.getElementById('memoryForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '提交中...';
+      
+      try {
+        // 获取表单数据
+        const formData = new FormData(this);
+        const identity = formData.get('identity');
+        const grade = formData.get('grade');
+        const content = formData.get('content');
+        const tags = formData.getAll('tags');
+        const signatureType = formData.get('signatureType');
+        const nickname = formData.get('nickname');
+        
+        // 验证必填项
+        if (!identity || !grade || !content || tags.length === 0 || !signatureType) {
+          showError('请填写所有必填项');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '🚀 投递记忆';
+          return;
+        }
+        
+        // 验证内容长度
+        if (content.length < 10) {
+          showError('记忆内容至少需要10个字');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '🚀 投递记忆';
+          return;
+        }
+        
+        if (content.length > 200) {
+          showError('记忆内容不能超过200字');
+          submitBtn.disabled = false;
+          submitBtn.textContent = '🚀 投递记忆';
+          return;
+        }
+        
+        // 验证昵称
+        if (signatureType === '显示昵称') {
+          if (!nickname || nickname.trim().length < 2) {
+            showError('昵称至少需要2个字');
+            submitBtn.disabled = false;
+            submitBtn.textContent = '🚀 投递记忆';
+            return;
+          }
+        }
+        
+        // 保存到LeanCloud
+        const Memory = AV.Object.extend('Memory');
+        const memory = new Memory();
+        
+        memory.set('identity', identity);
+        memory.set('grade', grade);
+        memory.set('content', content);
+        memory.set('tags', tags);
+        memory.set('signatureType', signatureType);
+        memory.set('nickname', nickname || '');
+        memory.set('isMatched', false);
+        memory.set('matchCount', 0);
+        
+        // 如果有照片，保存照片URL
+        if (uploadedPhotoFile) {
+          memory.set('photo', uploadedPhotoFile.url());
+          memory.set('photoFile', uploadedPhotoFile);  // 保存文件对象，方便后续操作
+        }
+        
+        await memory.save();
+        
+        // 成功提示
+        alert('✅ 提交成功！即将跳转到捞瓶页面...');
+        
+        // 跳转到捞瓶页面
+        window.location.href = 'receive.html?identity=' + encodeURIComponent(identity);
+        
+      } catch (error) {
+        console.error('提交失败:', error);
+        showError('提交失败：' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = '🚀 投递记忆';
+      }
+    });
+    
+    // 显示错误信息
+    function showError(message) {
+      const errorMessage = document.getElementById('errorMessage');
+      errorMessage.textContent = message;
+      errorMessage.classList.add('show');
+      
+      setTimeout(() => {
+        errorMessage.classList.remove('show');
+      }, 3000);
+    }
+     
+    // 防止双击缩放
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+    
+    // 输入框获得焦点时滚动到可见位置
+    document.querySelectorAll('input, textarea').forEach(element => {
+      element.addEventListener('focus', function() {
+        setTimeout(() => {
+          this.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 300);
+      });
+    });
+  </script>
+</body>
+</html>
