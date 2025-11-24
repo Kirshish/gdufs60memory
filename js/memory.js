@@ -2,7 +2,7 @@
 AV.init({
     appId: "AjDlSqRRtPZxgvP7oKE51Ed3-MdYXbMMI",
     appKey: "AmW2gLklfoggtMLACiWLkYZr",
-    serverURL: "https://memory-proxy.zhangjiayi1219.workers.dev/"
+    serverURL: "https://memory-proxy.zhangjiayi1219.workers.dev"
 });
 
 // 保存记忆
@@ -149,3 +149,4 @@ document.getElementById('memory-input').addEventListener('keypress', (e) => {
         saveMemory();
     }
 });
+
