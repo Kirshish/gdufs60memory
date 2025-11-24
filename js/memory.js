@@ -1,10 +1,3 @@
-// 初始化 LeanCloud
-AV.init({
-    appId: "AjDlSqRRtPZxgvP7oKE51Ed3-MdYXbMMI",
-    appKey: "AmW2gLklfoggtMLACiWLkYZr",
-    serverURL: "https://memory-proxy.zhangjiayi1219.workers.dev"
-});
-
 // 保存记忆
 async function saveMemory() {
     const content = document.getElementById('memory-input').value.trim();
@@ -149,4 +142,5 @@ document.getElementById('memory-input').addEventListener('keypress', (e) => {
         saveMemory();
     }
 });
+
 
