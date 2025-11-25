@@ -389,10 +389,6 @@
         <div class="stat-number" id="totalMemories">0</div>
         <div class="stat-label">已投递记忆</div>
       </div>
-      <div class="stat-item">
-        <div class="stat-number" id="totalMatches">0</div>
-        <div class="stat-label">成功交换</div>
-      </div>
     </div>
   </div>
   
@@ -404,7 +400,6 @@
     if (typeof AV === 'undefined') {
       console.error('❌ LeanCloud SDK 未加载！');
       document.getElementById('totalMemories').textContent = '—';
-      document.getElementById('totalMatches').textContent = '—';
     } else {
       console.log('✅ LeanCloud SDK 已加载');
       
@@ -463,5 +458,6 @@
   <!-- 自定义 JS -->
 </body>
 </html>
+
 
 
